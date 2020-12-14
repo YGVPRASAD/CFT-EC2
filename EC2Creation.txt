@@ -9,52 +9,48 @@ Resources:
       Tags:
       - Key: Name
         Value: myVPC
- PublicSubnet1:
+  PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.0.0/24
+      CidrBlock: 10.1.1.0/24
       AvailabilityZone: us-east-1a
       Tags:
         - Key: Name
           Value: Public Subnet 1
-
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 10.1.2.0/24
       AvailabilityZone: us-east-1b
       Tags:
         - Key: Name
           Value: Private Subnet 1
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-      - Key: Name
-        Value: myVPC Internet Gateway
-
+    DependsOn: VPC
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn:
+      - VPC
+      - InternetGateway
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
   EIP:
-   DependsOn: VPCGatewayAttach
-   Type: AWS::EC2::EIP
-   Properties:
+    Type: AWS::EC2::EIP
+    Properties:
       Domain: vpc
   NAT:
-   Type: AWS::EC2::NatGateway
-   Properties:
+    Type: AWS::EC2::NatGateway
+    Properties:
       AllocationId:
          Fn::GetAtt:
          - EIP
          - AllocationId
       SubnetId:
          Ref: PublicSubnet1
-      
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -62,7 +58,6 @@ Resources:
       Tags:
         - Key: Name
           Value: Public Route Table
-
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -73,9 +68,8 @@ Resources:
   PublicSubnetRouteTableAssociation1:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
+      RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1
-      RouteTableId: !Ref PublicRouteTable	
-	  
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -86,24 +80,23 @@ Resources:
   PrivateRoute:
    Type: AWS::EC2::Route
    Properties:
-      RouteTableId: !Ref: PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NAT		
 
-  PrivateSubnetRouteTableAssociation1:
+  PrivateSubnetRouteTableAssociation2:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet1
       RouteTableId: !Ref PrivateRouteTable
-  
+      SubnetId: !Ref PrivateSubnet1	  
   Ec2SeecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Provide SecurityGroup
-	  
+      GroupDescription: Provide SecurityGroup  
   Ec2Instance:
-    Type: AWS::EC2::instance
+    Type: AWS::EC2::Instance
     Properties:
        InstanceType: t2.micro
-       ImageId : ami-033423479034
-	   SubnetId: !Ref PublicSubnet11
+       ImageId : ami-096fda3c22c1c990a
+       SubnetId: !Ref PublicSubnet1	  
+	  
